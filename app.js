@@ -20,6 +20,20 @@ app.get("/health", (req, res) => {
     res.json({ status: "ok", message: "Server is running and connected to Supabase." });
 });
 
+app.get("/public/info", (req, res) => {
+    res.json({ message: "Welcome stranger! This info is public." });
+});
+
+app.get("/protected/profile", (req, res) => {
+    const authheader = req.headers.authorization;
+    const regex = /^Bearer\s+(.+)$/i; 
+    console.log(authheader);
+    if (!authheader || !authheader.match(regex)){
+        return res.status(401).send({ "error": "Access token required" });
+    }
+    res.json({ message: "" });
+});
+
 app.post("/auth/signup", async (req, res) => {
     const { email, password } = req.body;
     if (!email){
