@@ -24,14 +24,23 @@ app.get("/public/info", (req, res) => {
     res.json({ message: "Welcome stranger! This info is public." });
 });
 
-app.get("/protected/profile", (req, res) => {
+app.get("/protected/profile", async (req, res) => {
     const authheader = req.headers.authorization;
     const regex = /^Bearer\s+(.+)$/i; 
     console.log(authheader);
     if (!authheader || !authheader.match(regex)){
         return res.status(401).send({ "error": "Access token required" });
     }
-    res.json({ message: "" });
+    const token = authheader.replace("Bearer ", "")
+    const { data: { user } } = await supabase.auth.getUser(token)
+    if (!user){
+        return res.status(401).send({ "error": "Invalid or expired token" })
+    }
+    res.json({
+        "id": user.id, 
+        "email": user.email, 
+        "created_at": user.created_at
+    });
 });
 
 app.post("/auth/signup", async (req, res) => {
