@@ -24,25 +24,6 @@ app.get("/public/info", (req, res) => {
     res.json({ message: "Welcome stranger! This info is public." });
 });
 
-app.get("/protected/profile", async (req, res) => {
-    const authheader = req.headers.authorization;
-    const regex = /^Bearer\s+(.+)$/i; 
-    console.log(authheader);
-    if (!authheader || !authheader.match(regex)){
-        return res.status(401).send({ "error": "Access token required" });
-    }
-    const token = authheader.replace("Bearer ", "")
-    const { data: { user } } = await supabase.auth.getUser(token)
-    if (!user){
-        return res.status(401).send({ "error": "Invalid or expired token" })
-    }
-    res.json({
-        "id": user.id, 
-        "email": user.email, 
-        "created_at": user.created_at
-    });
-});
-
 app.post("/auth/signup", async (req, res) => {
     const { email, password } = req.body;
     if (!email){
@@ -86,6 +67,38 @@ app.post("/auth/login", async (req, res) => {
         "access_token": data.session.access_token,
         "refresh_token": data.session.refresh_token
     });
+});
+
+async function validateUser(req, res, next) {
+    const authheader = req.headers.authorization;
+    const regex = /^Bearer\s+(.+)$/i; 
+    if (!authheader || !authheader.match(regex)){
+        return res.status(401).send({ "error": "Access token required" });
+    }
+    const token = authheader.replace("Bearer ", "")
+    const { data: { user } } = await supabase.auth.getUser(token)
+    if (!user){
+        return res.status(401).send({ "error": "Invalid or expired token" });
+    }
+    req.user = user;
+    next();
+}
+
+app.get("/protected/profile", validateUser, (req, res) => {
+    const user = req.user;
+    res.json({
+        "id": user.id, 
+        "email": user.email, 
+        "created_at": user.created_at
+    });
+});
+
+app.post("/auth/logout", validateUser, async (req, res) => {
+    const { error } = await supabase.auth.signOut()
+    if (error){
+        return res.status(400).send({ "error": error.message });
+    }
+    res.status(204).send();
 });
 
 app.listen(port, () => {
