@@ -1,5 +1,7 @@
 const express = require("express");
 const { createClient } = require("@supabase/supabase-js");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./openapi.json");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -100,6 +102,8 @@ app.post("/auth/logout", validateUser, async (req, res) => {
     }
     res.status(204).send();
 });
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
