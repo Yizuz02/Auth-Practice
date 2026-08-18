@@ -103,6 +103,32 @@ app.post("/auth/logout", validateUser, async (req, res) => {
     res.status(204).send();
 });
 
+// Middleware to ensure the authenticated user has the "admin" role
+function validateAdmin(req, res, next) {
+    const user = req.user;
+
+    // Check custom role stored in app_metadata or user.role
+    const role = user.app_metadata?.role || user.role;
+
+    if (role !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Admin access required" });
+    }
+
+    next();
+}
+
+// Protected Admin-only endpoint
+app.get("/admin/profile", validateUser, validateAdmin, (req, res) => {
+    const user = req.user;
+    return res.json({
+        id: user.id,
+        email: user.email,
+        role: user.app_metadata?.role || user.role,
+        created_at: user.created_at
+    });
+});
+
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(port, () => {

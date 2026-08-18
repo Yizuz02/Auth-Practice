@@ -110,6 +110,42 @@
           "401": { "description": "Unauthorized - Token missing or invalid" }
         }
       }
+    },
+    "/admin/profile": {
+      "get": {
+        "summary": "Get admin profile data",
+        "description": "Restricted endpoint accessible only to authenticated users with the 'admin' role.",
+        "tags": ["Admin"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "example": "6d32c567-4144-40db-9323-54e5238f33e1" },
+                    "email": { "type": "string", "example": "admin@test.com" },
+                    "role": { "type": "string", "example": "admin" },
+                    "created_at": { "type": "string", "example": "2026-08-18T20:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing, malformed, or expired token"
+          },
+          "403": {
+            "description": "Forbidden - Authenticated user lacks admin role"
+          }
+        }
+      }
     }
   }
 }

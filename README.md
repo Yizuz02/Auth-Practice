@@ -133,6 +133,7 @@ http://localhost:3000
 | `POST` | `/auth/logout` | Terminates the current authenticated user session.| **Yes** (`Bearer <token>`)|
 | `GET` | `/public/info` | Open public information endpoint accessible to anyone.| No|
 | `GET` | `/protected/profile` | Returns the profile data of the currently authenticated user.| **Yes** (`Bearer <token>`)|
+| `GET` |  `/admin/profile` |Restricted endpoint accessible strictly to authenticated users with the admin role. | **Yes** (`Bearer <token>`)| 
 
 ---
 
@@ -163,6 +164,33 @@ To test the protected endpoints directly from Swagger UI:
 
 ![Swagger Protected Route Execution](test2.png)
 
+## Extras
+
+### Decoded JWT Analysis & Token Security
+
+A decoded Supabase access token reveals standard claims and metadata, including the issuer (`iss`), subject/user ID (`sub`), expiration timestamp (`exp`), role (`role`), and user metadata such as email and session details. 
+
+Because a JSON Web Token is simply Base64URL-encoded rather than encrypted, anyone who intercepts or possesses the token can easily inspect its contents on tools like `jwt.io`; therefore, confidential information or private secrets must never be placed inside the payload.
+
+---
+
+### Role-Based Access Control (RBAC) & 401 vs 403
+
+To demonstrate granular authorization beyond simple authentication, an admin-only route (`GET /admin/profile`) was implemented alongside a dedicated `validateAdmin` middleware:
+
+* **401 Unauthorized:** *"I do not know who you are"* — triggered by `validateUser` when the token is missing, malformed, or invalid/expired.
+* **403 Forbidden:** *"I know who you are, but you are not allowed in"* — returned by `validateAdmin` when an authenticated user lacks the required `admin` role.
+
+#### Implementation & Admin Promotion Query
+
+The system reads custom roles securely from `user.app_metadata.role` (embedded in the JWT). Because client users cannot tamper with `app_metadata` from the frontend SDK, roles are assigned exclusively server-side or via the database.
+
+To bootstrap the first administrator account (`admin@test.com`), the role was assigned directly in the Supabase SQL Editor:
+
+```sql
+UPDATE auth.users
+SET raw_app_meta_data = raw_app_meta_data || '{"role": "admin"}'::jsonb
+WHERE email = 'admin@test.com';
 
 ## Internship
 
